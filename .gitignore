@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Model / embedding artifacts
+*.pt
+*.pth
+
+# PDF renders / caches
+*.png
+*.jpg
+
+# OS
+.DS_Store
