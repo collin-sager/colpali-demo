@@ -20,12 +20,12 @@ def main():
     parser.add_argument("--index", type=str, default=INDEX_PATH, help="Path to index file")
     args = parser.parse_args()
 
-    # Load index
+    # load index
     data = torch.load(args.index, map_location="cpu")
     tile_embeddings = data["tile_embeddings"]
     tile_meta = data["tile_meta"]
 
-    # Load model + processor
+    # load model + processor
     model = ColPali.from_pretrained(
         MODEL,
         torch_dtype=torch.bfloat16 if "cuda" in device else torch.float32,
@@ -35,7 +35,7 @@ def main():
 
     tile_embeddings = tile_embeddings.to(model.device)
 
-    # Embed query + score
+    # embed query + score
     with torch.no_grad():
         q_inputs = processor.process_queries([args.query]).to(model.device)
         q_emb = model(**q_inputs)
@@ -43,6 +43,7 @@ def main():
         scores = processor.score_multi_vector(q_emb, tile_embeddings)[0]
         topk = torch.topk(scores, k=min(args.top_k, scores.numel()))
 
+    # output results to terminal
     print(f"\nQuery: {args.query}")
     print(f"Top {min(args.top_k, scores.numel())} results:\n")
 

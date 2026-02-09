@@ -3,21 +3,22 @@ from pdf2image import convert_from_path
 from colpali_engine.models import ColPali, ColPaliProcessor
 import torch
 
-LECS_DIR = Path("lecs")
+LECS_DIR = Path("documents")
 MODEL = "vidore/colpali-v1.3"
-DPI = 300
-OUT = "lecs_index.pt"
+DPI = 300 # higher = better recognition
+OUT = "documents_embedded.pt"
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-
+# split each pdf page into 2x2 tiles
+# 0 = top left, 1 = top right, 2 = bottom left, 3 = bottom right
+# 2x2 is often a good balance between 
 def tile_image(img, rows=2, cols=2):
-    """Split a PIL image into rows x cols tiles (row-major)."""
     w, h = img.size
     tw, th = w // cols, h // rows
     tiles = []
-    for r in range(rows):          # top -> bottom
-        for c in range(cols):      # left -> right
+    for r in range(rows):          
+        for c in range(cols):      
             left = c * tw
             upper = r * th
             right = (c + 1) * tw
@@ -31,7 +32,7 @@ def main():
     if not pdf_paths:
         raise FileNotFoundError(f"No PDFs found in {LECS_DIR.resolve()}")
 
-    # Load model + processor
+    # load model + processor
     model = ColPali.from_pretrained(
         MODEL,
         torch_dtype=torch.bfloat16 if "cuda" in device else torch.float32,
@@ -39,7 +40,7 @@ def main():
     ).eval()
     processor = ColPaliProcessor.from_pretrained(MODEL)
 
-    # Build all tiles + metadata
+    # build all tiles + metadata
     all_tiles = []
     all_meta = []
     total_pages = 0
@@ -60,7 +61,7 @@ def main():
                     }
                 )
 
-    # Embed all tiles
+    # embed all tiles
     bs = 4 if "cuda" in device else 1
     tile_embs = []
 
@@ -73,7 +74,7 @@ def main():
 
     tile_embeddings = torch.cat(tile_embs, dim=0)
 
-    # Save index
+    # save index
     torch.save(
         {
             "model": MODEL,
@@ -89,6 +90,7 @@ def main():
         OUT,
     )
 
+    # log activity to terminal
     print(f"Indexed {len(pdf_paths)} PDFs from {LECS_DIR}/")
     print(f"Total pages: {total_pages}")
     print(f"Total tiles: {len(all_tiles)} (2x2)")
