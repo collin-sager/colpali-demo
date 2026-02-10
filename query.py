@@ -53,7 +53,8 @@ def main():
         page = m["page"] + 1  # 1-based for humans
         tile = m["tile"]
         quad = tile_to_quadrant(tile)
-        print(f"{rank:>2}. score={sc:>7.4f}  {doc}  page={page}  tile={tile} ({quad})")
+        page_width = len(str(max(m["page"] for m in tile_meta) + 1))
+        print(f"{rank:>2}. {doc} page {page:>{page_width}} [score={sc:>7.4f}, tile={tile}]")
 
 
 if __name__ == "__main__":
